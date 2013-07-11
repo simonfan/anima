@@ -1,8 +1,8 @@
-define(['animastate'], function(Animastate) {
+define(['anima', 'jquery'], function(Animastate, $) {
 
-	window.a = Animastate.build({
+/*	window.a = Animastate.build({
 		$el: $('#first'),
-		initial: 'stopped:fadeOut',
+		initial: 'fadeIn',
 
 		animaStates: {
 			fadeIn: {
@@ -17,9 +17,10 @@ define(['animastate'], function(Animastate) {
 
 		animaOptions: {
 			fadeIn: {
-				duration: 5000,
-				__before: function($el) {
-					$el.css('display', 'block');
+				duration: 1000,
+				__before: {
+					display: 'block',
+					zIndex: 1,
 				}
 			},
 			fadeOut: {
@@ -32,15 +33,44 @@ define(['animastate'], function(Animastate) {
 	});
 
 
-	window.b = Animastate.build({});
-
-
-	a.on('lalala', function() {
-		alert('a: lalala');
+	a.on('fadeOut', function() {
+		console.log('stopped at fadeOut');
 	});
 
-	b.on('lalala', function() {
-		alert('b: lalala');
-	})
+	a.on('enter:fadeIn', function() {
+		console.log('entering fadeIn')
+	});
+*/
 
+
+
+	$('#first').anima({
+		initial: 'fadeIn',
+
+		animaStates: {
+			fadeIn: {
+				opacity: 1,
+				zIndex: 1,
+			},
+		},
+
+		animaOptions: {
+			fadeIn: {
+				duration: 1000,
+				__before: {
+					display: 'block',
+					zIndex: 1,
+				}
+			},
+			fadeOut: {
+				duration: 3000,
+				__after: function($el) {
+					$el.css('display', 'none');
+				}
+			}
+		}
+	});
+
+	// define a state using the plugin method
+	$('#first').anima('state', 'fadeOut', { opacity: 0, zIndex: 0 });
 });

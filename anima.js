@@ -39,9 +39,10 @@ define(['jquery','fsm','gs','underscore','_.mixins'], function($, FSM, GS, _, un
 		}
 	};
 
-	var Animastate = Object.create(FSM);
-	Animastate.extend(GS, {
+	var Anima = Object.create(FSM);
+	Anima.extend(GS, {
 		init: function(options) {
+
 			_.bindAll(this, 'anima');
 
 			this._animaStates = options.animaStates || {};
@@ -50,16 +51,27 @@ define(['jquery','fsm','gs','underscore','_.mixins'], function($, FSM, GS, _, un
 			// el
 			this.$el = options.$el;
 
+			// save a reference to this object on the $el
+			this.$el.data('anima', this);
 
 			// the promise
 			this.promise = true;
 
+			// INITIALIZE //
+			// first transition: transitate(state, options, insist);
+			this.transitate(options.initial, {}, true);
+		},
 
-			/////////////////////////////////////////////////////////////////
-			//// Animastate is defined after FSM, so we may overwrite FSM ///
-			//// property values (such as initial state) ////////////////////
-			/////////////////////////////////////////////////////////////////
+		////////////////////////////////////////////////
+		////// OVERWRITE FSM initial(data) method //////
+		////////////////////////////////////////////////
+		// this method is used to get the initial state of the machine
+		// and it is passed the same arguments as the .init method
+		initial: function(options) {
+			var initialAttr = options.initialAttr || 'data-initial',
+				initial = options.$el.attr(initialAttr);
 
+			return 'on-transition:' + initial;
 		},
 
 		anima: function(method) {
@@ -74,7 +86,8 @@ define(['jquery','fsm','gs','underscore','_.mixins'], function($, FSM, GS, _, un
 					this.anima('_processAnimaSpecialOption', aoptions.__before);
 
 					// emit event
-					this.emit('enter->' + this.state, this.$el, this);
+					this.emit('enter', objective, this.$el, this);
+					this.emit('enter:' + objective, this.$el, this);
 				},
 
 				__leave: function(objective, aoptions) {
@@ -82,22 +95,23 @@ define(['jquery','fsm','gs','underscore','_.mixins'], function($, FSM, GS, _, un
 					this.anima('_processAnimaSpecialOption', aoptions.__after);
 
 					/// EMIT EVENT ////
-					this.emit('leave->' + this.state, this.$el, this);
+					this.emit('leave', objective, this.$el, this);
+					this.emit('leave:' + objective, this.$el, this);
 				}
 			},
 
 			'stopped:*': {
 				__enter: function(objective, aoptions) {
-					this.emit(this.state, this.$el, this);
+					this.emit(objective, this.$el, this);
 				},
 			},
 
 			'*': {
-				transitate: function(token, objective, options) {
+				transitate: function(token, objective, options, insist) {
 
 					var current = token.split(':')[1];
 
-					if (current === objective) {
+					if (current === objective && !insist) {
 
 						// return the promise object
 						return this.promise;
@@ -110,19 +124,17 @@ define(['jquery','fsm','gs','underscore','_.mixins'], function($, FSM, GS, _, un
 							aoptions = this.anima('options', objective);
 
 						// overwrite the options with the on call ones
-						if (typeof options === 'object') {
-							aoptions = _.extend({}, aoptions, options);
-						}
+						aoptions = _.extend({}, aoptions, options);
 
 						// animation won't start until next tick of the processing.
 						var promise = this.promise = $.when(this.$el.stop().animate(astate, aoptions)).then(function() {
-							_this.set('stopped:'+objective, aoptions);
+							_this.set('stopped:'+objective, aoptions, insist);
 						});
 
 						// as .set is running synchronously, the special methods __enter and __leave 
 						// will be called before the animation starts!!! Even this method having
 						// been called after the animation function
-						this.fsm('set','on-transition:'+objective, aoptions);
+						this.fsm('set','on-transition:'+objective, aoptions, insist);
 
 						return promise;
 					}
@@ -131,6 +143,31 @@ define(['jquery','fsm','gs','underscore','_.mixins'], function($, FSM, GS, _, un
 		}
 	});
 
+	
 
-	return Animastate;
+	///////////////////////////////
+	/////// JQUERY PLUGIN /////////
+	///////////////////////////////
+	$.fn.anima = function(first, second, third) {
+
+		if (typeof first === 'object' && !second && !third) {
+			// initialization
+			first.$el = this;
+
+			return Anima.build(first);
+
+		} else if (typeof first === 'string') {
+			// method calling
+			var obj = this.data('anima'),
+				method = anima[ first ] || obj[ first ],
+				args = _.args(arguments, 1);
+
+			return method.apply(obj, args);
+		}
+
+
+	};
+
+
+	return Anima;
 });

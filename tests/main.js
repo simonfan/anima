@@ -14,7 +14,7 @@ require.config({
 		'gs': 'components/gs/gs',
 
 		// the module files go here
-		'animastate': '../animastate',
+		'anima': '../anima',
 
 		// DEMO
 		'demo-main': 'demo',	// the main file for the demo

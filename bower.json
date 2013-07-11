@@ -1,5 +1,5 @@
 {
-  "name": "Animastate",
+  "name": "anima",
   "version": "0.0.1",
   "dependencies": {
     "jquery": "lastest",
@@ -10,5 +10,5 @@
   "devDependencies": {
     "qunit": "latest"
   },
-  "main": "animastate.js"
+  "main": "anima.js"
 }
