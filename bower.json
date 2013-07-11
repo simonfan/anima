@@ -1,0 +1,14 @@
+{
+  "name": "Animastate",
+  "version": "0.0.1",
+  "dependencies": {
+    "jquery": "lastest",
+    "fsm": "simonfan/fsm",
+    "_.mixins": "simonfan/_.mixins",
+    "gs": "simonfan/gs"
+  },
+  "devDependencies": {
+    "qunit": "latest"
+  },
+  "main": "animastate.js"
+}
