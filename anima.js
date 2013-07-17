@@ -45,6 +45,13 @@ define(['jquery','fsm','underscore','_.mixins'], function($, FSM, undef, undef) 
 			}
 		},
 
+
+		// parses a astate object, returning an object with:
+		// 	- $animation
+		//	- $options
+		//	- aoptions
+
+
 		// the state object is not an exact jquery animation object.
 		// the state might be just 
 		_$animation: function(astate) {
@@ -140,14 +147,61 @@ define(['jquery','fsm','underscore','_.mixins'], function($, FSM, undef, undef) 
 			})
 		},
 
-		flow: function(states) {
+		flow: function(sequence, options, insist) {
+			// sequence may either be an array or a single state string
+			// the objective is the LAST state of the sequence.
+			var sequence = typeof sequence === 'string' ? [sequence] : sequence,
+				objective = _.last(sequence);
 
-		},
+			if ( !this.isNewObjective(objective) && !insist ) {
 
-		// a method that checks if the transition should be executed
-		checkObjective: function(objective) {
-			// if objective is an array
-		},
+				// return the promise object
+				return this.promise;
+
+			} else {
+				// set the flow queue as the sequence
+				this.flowq = sequence;
+
+
+				var _this = this,
+
+					// save the start and the final
+					ini = sequence[0],
+					end = _.last(sequence);
+
+				// set the animation queue up.
+				_.each(sequence, function(statename, index) {
+
+					var astate = _this.anima('state', statename),
+						// aoptions is the special property __options defined on the astate
+						aoptions = astate.__options,
+
+						// css object passed to jquery.animate(css, options)
+						$animation = _this.anima('_$animation', astate),
+						// options object passed to jquery.animate(css, options)
+						$options = _this.anima('_$options', aoptions);
+
+					var promise = $.when( this.$el.animate($animation, $options) )
+
+					promise.then(function())
+					// save the promise
+					_this.promise = promise;
+				});
+
+				// set a callback for when the whole queue is finished
+				this.promise.then(function() {
+					this.fsm('set','stopped:'+ end)
+				});
+
+				// set the state to 'on-transition:*'
+
+				// as .set is running synchronously, the special methods __enter and __leave 
+				// will be called before the animation starts!!! Even this method having
+				// been called after the animation function
+				this.fsm('set','on-transition:'+objective);
+
+			}
+		}
 	};
 
 	var Anima = Object.create(FSM);
@@ -173,11 +227,11 @@ define(['jquery','fsm','underscore','_.mixins'], function($, FSM, undef, undef) 
 			this.promise = true;
 
 			// the queue of states this element should pass through
-			this.animaqueue = [];
+			this.flowq = [];
 
 			// INITIALIZE //
 			// first transition: transitate(state, options, insist);
-			this.transitate(options.initial, {}, true);
+			this.flow(options.initial, {}, true);
 		},
 
 		////////////////////////////////////////////////
@@ -198,81 +252,52 @@ define(['jquery','fsm','underscore','_.mixins'], function($, FSM, undef, undef) 
 		},
 
 		states: {
+			// all wild-card state functions receive the token value as the first parameter.
 			'on-transition:*': {
-				__enter: function(objective, aoptions) {
+				__enter: function(currObjective, aoptions) {
 					// get the special option __before
 					this.anima('_processAnimaSpecialOption', aoptions.__before);
 
 					// emit event
-					this.emit('enter', objective, this.$el, this);
-					this.emit('enter:' + objective, this.$el, this);
+					this.emit('enter', currObjective, this.$el, this);
+					this.emit('enter:' + currObjective, this.$el, this);
 				},
 
-				__leave: function(objective, aoptions) {
+				__leave: function(currObjective, aoptions) {
 					// get the special option __after
 					this.anima('_processAnimaSpecialOption', aoptions.__after);
 
 					/// EMIT EVENT ////
-					this.emit('leave', objective, this.$el, this);
-					this.emit('leave:' + objective, this.$el, this);
-				}
+					this.emit('leave', currObjective, this.$el, this);
+					this.emit('leave:' + currObjective, this.$el, this);
+				},
+
+				isNewObjective: function(currObjective, objective) {
+					// as the currObjective only refers to 
+					// the current transition, not to the queue,
+					// compare the objective to the last item on the 
+					// flow queue
+					var finalObjective = _.last(this.flowq);
+
+					return finalObjective !== objective;
+				},
 			},
 
+			// all wild-card state functions receive the token value as the first parameter.
 			'stopped:*': {
-				__enter: function(current, aoptions) {
-					this.emit(current, this.$el, this);
+				__enter: function(currState, aoptions) {
+					this.emit(currState, this.$el, this);
 				},
 
-				transitate: function(current, objective) {
-					// when stopped, we must check if the objective and the current states
-					// are equal.
-					console.log(current, objective)
-				}
+				isNewObjective: function(currState, objective) {
+					return currState !== objective;
+				},
 			},
 
+			// all wild-card state functions receive the token value as the first parameter.
 			'*': {
-				transitate: function(token, objective, options, insist) {
-
-					var current = token.split(':')[1];
-
-					if (current === objective && !insist) {
-
-						// return the promise object
-						return this.promise;
-
-					} else {
-
-						// do the animation
-						var _this = this,
-							// astate is the original state object provided on state definition
-							astate = this.anima('state', objective),
-							// aoptions is the special property __options defined on the astate
-							aoptions = astate.__options,
-
-							// css object passed to jquery.animate(css, options)
-							$animation = this.anima('_$animation', astate),
-							// options object passed to jquery.animate(css, options)
-							$options = this.anima('_$options', aoptions);
-
-						// overwrite the options with the on call ones
-						$options = _.extend({}, $options, options);
-
-						// animation won't start until next tick of the processing.
-						var promise = this.promise = $.when(this.$el.stop().animate($animation, $options)).then(function() {
-							_this.set('stopped:'+objective, aoptions, insist);
-						});
-
-						// as .set is running synchronously, the special methods __enter and __leave 
-						// will be called before the animation starts!!! Even this method having
-						// been called after the animation function
-						this.fsm('set','on-transition:'+objective, aoptions, insist);
-
-						return promise;
-					}
-				},
-
-				queue: function(token, objective, options) {
-
+				flow: function(token, sequence, options, insist) {
+					return this.anima('flow', sequence, options, insist);
 				},
 			}
 		}
