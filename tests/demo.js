@@ -1,10 +1,10 @@
-define(['anima', 'jquery'], function(Animastate, $) {
+define(['anima', 'jquery'], function(Anima, $) {
 
-/*	window.a = Animastate.build({
+/*	window.a = Anima.build({
 		$el: $('#first'),
 		initial: 'fadeIn',
 
-		animaStates: {
+		Animas: {
 			fadeIn: {
 				opacity: 1,
 				zIndex: 1,
@@ -47,30 +47,32 @@ define(['anima', 'jquery'], function(Animastate, $) {
 	$('#first').anima({
 		initial: 'fadeIn',
 
-		animaStates: {
+		states: {
 			fadeIn: {
 				opacity: 1,
 				zIndex: 1,
+				
+				__options: {
+					duration: 3000,
+					__before: {
+						display: 'block',
+						zIndex: 1,
+					}
+				}
 			},
 		},
-
-		animaOptions: {
-			fadeIn: {
-				duration: 1000,
-				__before: {
-					display: 'block',
-					zIndex: 1,
-				}
-			},
-			fadeOut: {
-				duration: 3000,
-				__after: function($el) {
-					$el.css('display', 'none');
-				}
-			}
-		}
 	});
 
 	// define a state using the plugin method
-	$('#first').anima('state', 'fadeOut', { opacity: 0, zIndex: 0 });
+	$('#first').anima('state', 'fadeOut', {
+		opacity: 0,
+		zIndex: 0,
+
+		__options: {
+			duration: 3000,
+			__after: function($el) {
+				$el.css('display', 'none');
+			}
+		}
+	});
 });
