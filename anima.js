@@ -2,8 +2,6 @@ define(['jquery','fsm','cascade','underscore','_.mixins'], function($, FSM, Casc
 
 	// internally used methods.
 	var anima = {
-
-
 		// animate to one state
 		_toState: function(statename) {
 			var _this = this,
@@ -121,7 +119,13 @@ define(['jquery','fsm','cascade','underscore','_.mixins'], function($, FSM, Casc
 	Anima.extend({
 		init: function(options) {
 
-			_.bindAll(this, 'anima');
+			_.bindAll(this, 'anima','flow');
+
+			// el
+			this.$el = options.$el;
+
+			// save a reference to this object on the $el
+			this.$el.data('anima', this);
 
 			// object on which all animastates (astates) will be defined
 			this._astates = {};
@@ -132,12 +136,6 @@ define(['jquery','fsm','cascade','underscore','_.mixins'], function($, FSM, Casc
 			// save the states provided by options
 			this.anima('state', options.states);
 
-			// el
-			this.$el = options.$el;
-
-			// save a reference to this object on the $el
-			this.$el.data('anima', this);
-
 			// the promises:
 			// 1: general promise, completed when the full queue is complete
 			this.promise = true;
@@ -147,7 +145,7 @@ define(['jquery','fsm','cascade','underscore','_.mixins'], function($, FSM, Casc
 
 			// INITIALIZE //
 			// first transition: transitate(state, options, insist);
-			this.flow(options.initial, {}, true);
+			this.flow(options.initial, true);
 		},
 
 		////////////////////////////////////////////////
@@ -166,6 +164,9 @@ define(['jquery','fsm','cascade','underscore','_.mixins'], function($, FSM, Casc
 			var args = _.args(arguments, 1);
 			return anima[ method ].apply(this, args);
 		},
+
+
+		flow: anima.flow,
 
 		states: {
 			// all wild-card state functions receive the token value as the first parameter.
@@ -223,13 +224,6 @@ define(['jquery','fsm','cascade','underscore','_.mixins'], function($, FSM, Casc
 					return currState !== objective;
 				},
 			},
-
-			// all wild-card state functions receive the token value as the first parameter.
-			'*': {
-				flow: function(token, sequence, insist) {
-					return this.anima('flow', sequence, insist);
-				},
-			}
 		}
 	});
 
