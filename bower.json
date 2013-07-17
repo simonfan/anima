@@ -4,8 +4,9 @@
   "dependencies": {
     "jquery": "lastest",
     "fsm": "simonfan/fsm",
+    "buildable": "simonfan/buildable",
     "_.mixins": "simonfan/_.mixins",
-    "gs": "simonfan/gs"
+    "cascade": "simonfan/cascade"
   },
   "devDependencies": {
     "qunit": "latest"

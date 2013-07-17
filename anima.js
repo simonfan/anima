@@ -1,122 +1,28 @@
-implementing transitate method for all other states.
-
-/*
-	What is this module made for?
-
-	Anima is a coordinator of transitions for a single element.
-
-	1: define css properties as a named state object
-	2: transitate between all the defined states by only callling their names.
-	3: define __before and __after actions to be performed on the objects.
-
-
-	A very important functionality (which is going to be implemented on v2)
-	is the capability of understanding which is the current 'objective' of the animation queue
-	and base actions on that.
-
-	Whenever an element is 'on-transition', if it is asked to 'transitate' to some other state,
-	the anima object should be capable of inteligently verifying the new 'objective' against the 
-	one current being performed so that animations are not re-executed.
-*/
-
-qwe qwe wqe qew 
-
-define(['jquery','fsm','underscore','_.mixins'], function($, FSM, undef, undef) {
+define(['jquery','fsm','cascade','underscore','_.mixins'], function($, FSM, Cascade, undef, undef) {
 
 	// internally used methods.
 	var anima = {
 
-		// INTERNAL //
-		_processAnimaSpecialOption: function(option) {
-			//// PROCESS SPECIAL OPTION ////
-			if (typeof option === 'function') {
 
-				var opts = option.call(this, this.$el);
-
-				// if the function returns an object, assume the object
-				// is a css object to be set on the element
-				if (typeof opts === 'object') {
-					this.$el.css(opts);
-				}
-
-			} else if (typeof option === 'object') {
-				// assume it is a css object to be set on the element
-				this.$el.css(option);
-			}
-		},
-
-
-		// parses a astate object, returning an object with:
-		// 	- $animation
-		//	- $options
-		//	- aoptions
-
-
-		// the state object is not an exact jquery animation object.
-		// the state might be just 
-		_$animation: function(astate) {
-			var $animation = _.clone(astate);
-
-			delete $animation.__options;
-
-			return $animation;
-		},
-
-		_$options: function(aoptions) {
-			var $options = _.clone(aoptions);
-
-			delete $options.__before;
-			delete $options.__after;
-
-			return $options;
-		},
-
-
-		queue: function(objective) {
-
-		},
-
-		////////
-		/// for each state set on the queue. animate the element.
-		/// here we use the original behaviour of jquery animate method
-		/// which queues animations on the fx queue.
-		dequeue: function() {
-			var _this = this;
-			_.each(this.queue, function(statename, index) {
-
-					// astate is the original state object provided on state definition
-				var astate = _this.anima('state', objective),
-					// aoptions is the special property __options defined on the astate
-					aoptions = astate.__options,
-
-					// css object passed to jquery.animate(css, options)
-					$animation = _this.anima('_$animation', astate),
-					// options object passed to jquery.animate(css, options)
-					$options = _this.anima('_$options', aoptions);
-
-				$.when(_this.$el.animate($animation, $options))
-					.then(_this.queue);
-			});
-		},
-
-
-		// fetches the state object and animates the element to that state.
-		__transitate: function(objective) {
+		// animate to one state
+		_toState: function(statename) {
 			var _this = this,
+				astate = _this.anima('state', statename),
+				aoptions = _this.anima('options', statename) || {};
 
-			var promise = $.when(this.$el.animate($animation, $options));
+			// if astate is a function, just run it. 
+			// if it is an object, do jquery animation
+			var promise = typeof astate === 'function' ? astate.call(this, this.$el) : $.when(this.$el.animate(astate, aoptions));
 
-			promise.then(function() {
-				_this.set('stopped:' + objective, aoptions, insist);
-			});
+			// set state as stopped when this animation ends
+			promise.then(function() { _this.fsm('set','stopped:' + statename); });
 
-			// as .set is running synchronously, the special methods __enter and __leave 
-			// will be called before the animation starts!!! Even this method having
-			// been called after the animation function
-			this.fsm('set','on-transition:'+objective, aoptions, insist);
+			// set the state as on-transition just before the animation starts
+			this.fsm('set','on-transition:'+statename);
 
 			return promise;
 		},
+
 
 		/////////////////
 		////// API //////
@@ -139,15 +45,44 @@ define(['jquery','fsm','underscore','_.mixins'], function($, FSM, undef, undef) 
 				name: name,
 				value: state,
 				options: {
-					// set evaluate to true, so that if the state returned is 
-					// a function, then return the function's result instead of the 
-					// function itself.
-					evaluate: true
+					// this refers to the anima object.
+					evaluate: function(state) {
+
+						// if state is an object, return an $animation object
+						if (typeof state === 'object') {
+							for (prop in state) {
+								if (typeof state[ prop ] === 'function') {
+									state[ prop ] = state[ prop ].call(this.$el, this);
+								}
+							}
+
+						}
+
+						return state;
+					},
+					iterate: function(name, state) {
+						// clone the options and save them
+						this.anima('options', name, _.clone(state.__options));
+
+						// delete the options from the state object
+						delete state.__options;
+
+						return state;
+					},
 				}
 			})
 		},
 
-		flow: function(sequence, options, insist) {
+		options: function(name, options) {
+			return _.getset({
+				context: this,
+				obj: '_aoptions',
+				name: name,
+				value: options
+			})
+		},
+
+		flow: function(sequence, insist) {
 			// sequence may either be an array or a single state string
 			// the objective is the LAST state of the sequence.
 			var sequence = typeof sequence === 'string' ? [sequence] : sequence,
@@ -162,44 +97,22 @@ define(['jquery','fsm','underscore','_.mixins'], function($, FSM, undef, undef) 
 				// set the flow queue as the sequence
 				this.flowq = sequence;
 
-
 				var _this = this,
+					// build up a cascade object
+					cascade = Cascade.build();
 
-					// save the start and the final
-					ini = sequence[0],
-					end = _.last(sequence);
+				// stop all aniations on the $el
+				this.$el.stop();
 
-				// set the animation queue up.
+				// add tasks to cascade
 				_.each(sequence, function(statename, index) {
-
-					var astate = _this.anima('state', statename),
-						// aoptions is the special property __options defined on the astate
-						aoptions = astate.__options,
-
-						// css object passed to jquery.animate(css, options)
-						$animation = _this.anima('_$animation', astate),
-						// options object passed to jquery.animate(css, options)
-						$options = _this.anima('_$options', aoptions);
-
-					var promise = $.when( this.$el.animate($animation, $options) )
-
-					promise.then(function())
-					// save the promise
-					_this.promise = promise;
+					cascade.add(function(defer, common) {
+						return _this.anima('_toState', statename);
+					});
 				});
 
-				// set a callback for when the whole queue is finished
-				this.promise.then(function() {
-					this.fsm('set','stopped:'+ end)
-				});
-
-				// set the state to 'on-transition:*'
-
-				// as .set is running synchronously, the special methods __enter and __leave 
-				// will be called before the animation starts!!! Even this method having
-				// been called after the animation function
-				this.fsm('set','on-transition:'+objective);
-
+				// run the cascade and return the promise
+				return this.promise = cascade.run();
 			}
 		}
 	};
@@ -212,6 +125,9 @@ define(['jquery','fsm','underscore','_.mixins'], function($, FSM, undef, undef) 
 
 			// object on which all animastates (astates) will be defined
 			this._astates = {};
+
+			// object on which all aoptions will be deinfed
+			this._aoptions = {};
 
 			// save the states provided by options
 			this.anima('state', options.states);
@@ -254,18 +170,32 @@ define(['jquery','fsm','underscore','_.mixins'], function($, FSM, undef, undef) 
 		states: {
 			// all wild-card state functions receive the token value as the first parameter.
 			'on-transition:*': {
-				__enter: function(currObjective, aoptions) {
-					// get the special option __before
-					this.anima('_processAnimaSpecialOption', aoptions.__before);
+				__enter: function(currObjective) {
+					var aoptions = this.anima('options', currObjective);
+
+					if (aoptions && aoptions.__before) {
+						if (typeof aoptions.__before === 'object') {
+							this.$el.css(aoptions.__before);
+						} else if (typeof aoptions.__before === 'function') {
+							aoptions.__before.call(this, this.$el);
+						}
+					}
 
 					// emit event
 					this.emit('enter', currObjective, this.$el, this);
 					this.emit('enter:' + currObjective, this.$el, this);
 				},
 
-				__leave: function(currObjective, aoptions) {
-					// get the special option __after
-					this.anima('_processAnimaSpecialOption', aoptions.__after);
+				__leave: function(currObjective) {
+					var aoptions = this.anima('options', currObjective);
+
+					if (aoptions && aoptions.__before) {
+						if (typeof aoptions.__before === 'object') {
+							this.$el.css(aoptions.__before);
+						} else if (typeof aoptions.__before === 'function') {
+							aoptions.__before.call(this, this.$el);
+						}
+					}
 
 					/// EMIT EVENT ////
 					this.emit('leave', currObjective, this.$el, this);
@@ -296,8 +226,8 @@ define(['jquery','fsm','underscore','_.mixins'], function($, FSM, undef, undef) 
 
 			// all wild-card state functions receive the token value as the first parameter.
 			'*': {
-				flow: function(token, sequence, options, insist) {
-					return this.anima('flow', sequence, options, insist);
+				flow: function(token, sequence, insist) {
+					return this.anima('flow', sequence, insist);
 				},
 			}
 		}

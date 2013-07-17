@@ -11,7 +11,7 @@ require.config({
 		'_.mixins': 'components/_.mixins/_.mixins',
 		'fsm': 'components/fsm/fsm',
 		'wildcards': 'components/wildcards/wildcards',
-		'gs': 'components/gs/gs',
+		'cascade': 'components/cascade/cascade',
 
 		// the module files go here
 		'anima': '../anima',

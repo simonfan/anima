@@ -60,6 +60,28 @@ define(['anima', 'jquery'], function(Anima, $) {
 					}
 				}
 			},
+
+			fadeHalf: {
+				opacity: 0.5,
+				zIndex: 1,
+
+				__options: {
+					duration: 1000
+				}
+			},
+
+			halt: function() {
+				var defer = $.Deferred();
+
+				$('#first').html('halted');
+
+				setTimeout(function() {
+					$('#first').html('halt end!');
+					defer.resolve();
+				}, 5000)
+
+				return defer;
+			}
 		},
 	});
 
@@ -75,4 +97,9 @@ define(['anima', 'jquery'], function(Anima, $) {
 			}
 		}
 	});
+
+
+
+
+	$('#first').anima('flow',['fadeIn','halt','fadeOut'])
 });
