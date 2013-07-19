@@ -164,7 +164,7 @@ define(['jquery','fsm','cascade','underscore','_.mixins'], function($, FSM, Casc
 			this.flowq = [];
 
 			// INITIALIZE //
-			// first transition: transitate(state, options, insist);
+			// get the initial state
 			this.flow(options.initial, true);
 		},
 
@@ -174,8 +174,7 @@ define(['jquery','fsm','cascade','underscore','_.mixins'], function($, FSM, Casc
 		// this method is used to get the initial state of the machine
 		// and it is passed the same arguments as the .init method
 		initial: function(options) {
-			var initialAttr = options.initialAttr || 'data-initial',
-				initial = options.$el.attr(initialAttr);
+			var initial = options.initial = typeof options.initial === 'string' ? options.initial : options.initial.call(this, options.$el);
 
 			return 'on-transition:' + initial;
 		},
