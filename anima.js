@@ -135,23 +135,31 @@ define(['jquery','fsm','cascade','underscore','_.mixins'], function($, FSM, Casc
 	Anima.extend({
 		init: function(options) {
 
+			/*
+				options: {
+					id: 'string' or undefined (defaults to $el.prop('id'))
+					$el: jquery object,
+					initial: 'string' or function() {}
+
+					// optional: states
+					states: object
+				}
+			*/
+
 			_.bindAll(this, 'anima','flow');
 
 			// el
 			this.$el = options.$el;
+			this.id = options.id || this.$el.prop('id');
 
 			// save a reference to this object on the $el
 			this.$el.data('anima', this);
 
 			// object on which all animastates (astates) will be defined
 			this._astates = {};
-			// commonstates is a 
-			this.commonStates = options.commonStates;
 
 			// object on which all aoptions will be deinfed
 			this._aoptions = {};
-			// commonOptions
-			this.commonOptions = options.commonOptions;
 
 			// save the states provided by options
 			this.anima('state', options.states);
