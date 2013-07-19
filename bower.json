@@ -3,13 +3,11 @@
   "version": "0.0.1",
   "dependencies": {
     "jquery": "lastest",
+    "underscore": "lastest",
     "fsm": "simonfan/fsm",
     "buildable": "simonfan/buildable",
     "_.mixins": "simonfan/_.mixins",
     "cascade": "simonfan/cascade"
-  },
-  "devDependencies": {
-    "qunit": "latest"
   },
   "main": "anima.js"
 }

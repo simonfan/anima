@@ -45,11 +45,14 @@ define(['jquery','fsm','cascade','underscore','_.mixins'], function($, FSM, Casc
 				options: {
 					// this refers to the anima object.
 					evaluate: function(state) {
-						// for each property of the state, evaluate its value.
-						// and copy the result to a new res object
-						var res = {};
+						var res;
 
 						if (typeof state === 'object') {
+							// if the state is an object
+							// for each property of the state, evaluate its value.
+							// and copy the result to a new res object
+							res = {};
+
 							for (prop in state) {
 								if (typeof state[ prop ] === 'function') {
 									res[ prop ] = state[ prop ].call(this.$el, this);
@@ -57,13 +60,17 @@ define(['jquery','fsm','cascade','underscore','_.mixins'], function($, FSM, Casc
 									res[ prop ] = state[ prop ];
 								}
 							}
+						} else {
+							// if type of state is not an object, just pass it on.
+							res = state;
 						}
 
 						return res;
 					},
 					iterate: function(name, state) {
-						// first clone the state object, so that the original may remain unaltered.
-						var savestate = _.clone(state);
+						// if state is an object, clone it so that the original may remain unaltered.
+						// otherwise pass it on
+						var savestate = typeof state === 'object' ? _.clone(state) : state;
 
 						// clone the options and save them
 						if (savestate.__options) {
