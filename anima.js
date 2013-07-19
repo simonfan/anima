@@ -182,9 +182,7 @@ define(['jquery','fsm','cascade','underscore','_.mixins'], function($, FSM, Casc
 		// this method is used to get the initial state of the machine
 		// and it is passed the same arguments as the .init method
 		initial: function(options) {
-			var initial = options.initial = typeof options.initial === 'string' ? options.initial : options.initial.call(this, options.$el);
-
-			return 'on-transition:' + initial;
+			return 'not-initialized';
 		},
 
 		anima: function(method) {
@@ -249,6 +247,12 @@ define(['jquery','fsm','cascade','underscore','_.mixins'], function($, FSM, Casc
 					return currState !== objective;
 				},
 			},
+
+			'not-initialized': {
+				isNewObjective: function(token, objective) {
+					return true;
+				}
+			}
 		}
 	});
 

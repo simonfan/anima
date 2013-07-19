@@ -2,10 +2,6 @@ define(['anima', 'jquery'], function(Anima, $) {
 
 
 	$('#first').anima({
-		initial: function($el) {
-			return $el.attr('data-initial') || 'fadeIn';
-		},
-
 		states: {
 			fadeIn: {
 				opacity: 1,
@@ -60,5 +56,5 @@ define(['anima', 'jquery'], function(Anima, $) {
 
 
 
-//	$('#first').anima('flow',['fadeIn','halt','fadeOut','fadeHalf'])
+	$('#first').anima('flow',['fadeIn','halt','fadeOut','fadeHalf'])
 });
