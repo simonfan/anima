@@ -45,27 +45,36 @@ define(['jquery','fsm','cascade','underscore','_.mixins'], function($, FSM, Casc
 				options: {
 					// this refers to the anima object.
 					evaluate: function(state) {
+						// for each property of the state, evaluate its value.
+						// and copy the result to a new res object
+						var res = {};
 
-						// if state is an object, return an $animation object
 						if (typeof state === 'object') {
 							for (prop in state) {
 								if (typeof state[ prop ] === 'function') {
-									state[ prop ] = state[ prop ].call(this.$el, this);
+									res[ prop ] = state[ prop ].call(this.$el, this);
+								} else {
+									res[ prop ] = state[ prop ];
 								}
 							}
-
 						}
 
-						return state;
+						return res;
 					},
 					iterate: function(name, state) {
+						// first clone the state object, so that the original may remain unaltered.
+						var savestate = _.clone(state);
+
 						// clone the options and save them
-						this.anima('options', name, _.clone(state.__options));
+						if (savestate.__options) {
+							this.anima('options', name, _.clone(savestate.__options));
 
-						// delete the options from the state object
-						delete state.__options;
+							// delete the options from the savestate object
+							delete savestate.__options;
+						}
 
-						return state;
+						// return savestate instead of state object.
+						return savestate;
 					},
 				}
 			})
@@ -129,9 +138,13 @@ define(['jquery','fsm','cascade','underscore','_.mixins'], function($, FSM, Casc
 
 			// object on which all animastates (astates) will be defined
 			this._astates = {};
+			// commonstates is a 
+			this.commonStates = options.commonStates;
 
 			// object on which all aoptions will be deinfed
 			this._aoptions = {};
+			// commonOptions
+			this.commonOptions = options.commonOptions;
 
 			// save the states provided by options
 			this.anima('state', options.states);
@@ -208,9 +221,7 @@ define(['jquery','fsm','cascade','underscore','_.mixins'], function($, FSM, Casc
 					// the current transition, not to the queue,
 					// compare the objective to the last item on the 
 					// flow queue
-					var finalObjective = _.last(this.flowq);
-
-					return finalObjective !== objective;
+					return _.last(this.flowq) !== objective;
 				},
 			},
 
