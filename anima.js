@@ -107,7 +107,7 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 						return savestate;
 					},
 					// this refers to the anima object.
-					evaluate: function(state) {
+					evaluate: function(name, state) {
 						var res;
 
 						if (typeof state === 'object') {
