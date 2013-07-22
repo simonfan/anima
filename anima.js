@@ -1,4 +1,17 @@
-define(['jquery','fsm','cascade','underscore','_.mixins'], function($, FSM, Cascade, undef, undef) {
+define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, undef, undef) {
+
+
+	var anima = {
+
+	};
+
+
+	var Anima = Object.create(TaskRunner);
+	Anima.extend({
+		init: function(options) {
+
+		},
+	})
 
 	// internally used methods.
 	var anima = {

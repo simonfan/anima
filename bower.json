@@ -4,8 +4,9 @@
   "dependencies": {
     "jquery": "lastest",
     "underscore": "lastest",
+    "taskrunner": "simonfan/taskrunner",
     "buildable": "simonfan/buildable",
-    "_.mixins": "simonfan/_.mixins",
+    "_.mixins": "simonfan/_.mixins"
   },
   "main": "anima.js"
 }
