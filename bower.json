@@ -4,10 +4,8 @@
   "dependencies": {
     "jquery": "lastest",
     "underscore": "lastest",
-    "fsm": "simonfan/fsm",
     "buildable": "simonfan/buildable",
     "_.mixins": "simonfan/_.mixins",
-    "cascade": "simonfan/cascade"
   },
   "main": "anima.js"
 }
