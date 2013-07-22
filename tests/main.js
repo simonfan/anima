@@ -4,14 +4,13 @@ require.config({
 	paths: {
 		// basic libraries
 		'jquery': 'components/jquery/jquery',
-		'underscore': 'components/underscore-amd/underscore',
+		'underscore': 'components/underscore/underscore',
 		'eventemitter2': 'components/eventemitter2/lib/eventemitter2',
+		'json2': 'components/json2/json2',
 
 		'buildable': 'components/buildable/buildable',
 		'_.mixins': 'components/_.mixins/_.mixins',
-		'fsm': 'components/fsm/fsm',
-		'wildcards': 'components/wildcards/wildcards',
-		'cascade': 'components/cascade/cascade',
+		'taskrunner': 'components/taskrunner/taskrunner',
 
 		// the module files go here
 		'anima': '../anima',

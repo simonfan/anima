@@ -21,7 +21,12 @@ define(['anima', 'jquery'], function(Anima, $) {
 				zIndex: 1,
 
 				__options: {
-					duration: 1000
+					duration: 1000,
+
+					__before: {
+						display: 'block',
+						zIndex: 1,
+					}
 				}
 			},
 

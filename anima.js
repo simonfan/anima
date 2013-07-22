@@ -1,35 +1,47 @@
 define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, undef, undef) {
 
-
-	var anima = {
-
-	};
-
-
-	var Anima = Object.create(TaskRunner);
-	Anima.extend({
-		init: function(options) {
-
-		},
-	})
-
 	// internally used methods.
 	var anima = {
 		// animate to one state
 		_toState: function(statename) {
 			var _this = this,
-				astate = _this.anima('state', statename),
-				aoptions = _this.anima('options', statename) || {};
+				astate = this.anima('state', statename),
+				aoptions = this.anima('options', statename) || {};
 
+
+			/////////////////////////
+			///// 1: run before /////
+			/////////////////////////
+			if (aoptions && aoptions.__before) {
+				if (typeof aoptions.__before === 'object') {
+					this.$el.css(aoptions.__before);
+				} else if (typeof aoptions.__before === 'function') {
+					aoptions.__before.call(this, this.$el);
+				}
+			}
+
+
+			////////////////////////////////
+			////// 2: run the animation ////
+			////////////////////////////////
 			// if astate is a function, just run it. 
 			// if it is an object, do jquery animation
 			var promise = typeof astate === 'function' ? astate.call(this, this.$el) : $.when(this.$el.animate(astate, aoptions));
 
-			// set state as stopped when this animation ends
-			promise.then(function() { _this.fsm('set','stopped:' + statename); });
 
-			// set the state as on-transition just before the animation starts
-			this.fsm('set','on-transition:'+statename);
+			////////////////////////////
+			////// 3: run the after ////
+			////////////////////////////
+			// set state as stopped when this animation ends
+			promise.then(function() {
+				if (aoptions && aoptions.__after) {
+					if (typeof aoptions.__after === 'object') {
+						_this.$el.css(aoptions.__after);
+					} else if (typeof aoptions.__after === 'function') {
+						aoptions.__after.call(_this, _this.$el);
+					}
+				}
+			});
 
 			return promise;
 		},
@@ -40,6 +52,7 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 		/////////////////
 
 		state: function(name, state) {
+
 			/*
 				state: {
 					// jquery animation possibilities
@@ -50,6 +63,13 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 					}
 				}
 			*/
+
+			var _this = this;
+
+
+			/////////////////////////////
+			/// 2: save the state obj ///
+			/////////////////////////////
 			return _.getset({
 				context: this,
 				obj: '_astates',
@@ -81,6 +101,20 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 						return res;
 					},
 					iterate: function(name, state) {
+						/*
+							When a state is defined, the task that will execute the 
+							state should be also defined
+						*/
+						/////////////////////////
+						/// 1: save the task ////
+						/////////////////////////
+						this.taskrunner('task', name, function() {
+							return _this.anima('_toState', name);
+						});
+
+
+
+
 						// if state is an object, clone it so that the original may remain unaltered.
 						// otherwise pass it on
 						var savestate = typeof state === 'object' ? _.clone(state) : state;
@@ -110,41 +144,12 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 		},
 
 		flow: function(sequence, insist) {
-			// sequence may either be an array or a single state string
-			// the objective is the LAST state of the sequence.
-			var sequence = typeof sequence === 'string' ? [sequence] : sequence,
-				objective = _.last(sequence);
-
-			if ( !this.isNewObjective(objective) && !insist ) {
-
-				// return the promise object
-				return this.promise;
-
-			} else {
-				// set the flow queue as the sequence
-				this.flowq = sequence;
-
-				var _this = this,
-					// build up a cascade object
-					cascade = Cascade.build();
-
-				// stop all aniations on the $el
-				this.$el.stop();
-
-				// add tasks to cascade
-				_.each(sequence, function(statename, index) {
-					cascade.add(function(defer, common) {
-						return _this.anima('_toState', statename);
-					});
-				});
-
-				// run the cascade and return the promise
-				return this.promise = cascade.run();
-			}
+			// taskrunner run method receives: tasknames, insist, common object to be passed to each task.
+			this.taskrunner('run', sequence, insist, {});
 		}
 	};
 
-	var Anima = Object.create(FSM);
+	var Anima = Object.create(TaskRunner);
 	Anima.extend({
 		init: function(options) {
 
@@ -152,7 +157,6 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 				options: {
 					id: 'string' or undefined (defaults to $el.prop('id'))
 					$el: jquery object,
-					initial: 'string' or function() {}
 
 					// optional: states
 					states: object
@@ -168,34 +172,8 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 			// save a reference to this object on the $el
 			this.$el.data('anima', this);
 
-			// object on which all animastates (astates) will be defined
-			this._astates = {};
-
-			// object on which all aoptions will be deinfed
-			this._aoptions = {};
-
 			// save the states provided by options
 			this.anima('state', options.states);
-
-			// the promises:
-			// 1: general promise, completed when the full queue is complete
-			this.promise = true;
-
-			// the queue of states this element should pass through
-			this.flowq = [];
-
-			// INITIALIZE //
-			// get the initial state
-			this.flow(options.initial, true);
-		},
-
-		////////////////////////////////////////////////
-		////// OVERWRITE FSM initial(data) method //////
-		////////////////////////////////////////////////
-		// this method is used to get the initial state of the machine
-		// and it is passed the same arguments as the .init method
-		initial: function(options) {
-			return 'not-initialized';
 		},
 
 		anima: function(method) {
@@ -206,67 +184,22 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 
 		flow: anima.flow,
 
-		states: {
-			// all wild-card state functions receive the token value as the first parameter.
-			'on-transition:*': {
-				__enter: function(currObjective) {
-					var aoptions = this.anima('options', currObjective);
+		/////////////////////////////////////////////////
+		////// OVERWRITE taskrunner condition method ////
+		/////////////////////////////////////////////////
+		// RECEIVES: queue, tasks
+		condition: function(currentQueue, tasks) {
+			if (_.isArray(currentQueue)) {
+				// if currentQueue is an array of task names
+				// check if destinations match
 
-					if (aoptions && aoptions.__before) {
-						if (typeof aoptions.__before === 'object') {
-							this.$el.css(aoptions.__before);
-						} else if (typeof aoptions.__before === 'function') {
-							aoptions.__before.call(this, this.$el);
-						}
-					}
+				return _.last(currentQueue) !== _.last(tasks);
 
-					// emit event
-					this.emit('enter', currObjective, this.$el, this);
-					this.emit('enter:' + currObjective, this.$el, this);
-				},
-
-				__leave: function(currObjective) {
-					var aoptions = this.anima('options', currObjective);
-
-					if (aoptions && aoptions.__before) {
-						if (typeof aoptions.__before === 'object') {
-							this.$el.css(aoptions.__before);
-						} else if (typeof aoptions.__before === 'function') {
-							aoptions.__before.call(this, this.$el);
-						}
-					}
-
-					/// EMIT EVENT ////
-					this.emit('leave', currObjective, this.$el, this);
-					this.emit('leave:' + currObjective, this.$el, this);
-				},
-
-				isNewObjective: function(currObjective, objective) {
-					// as the currObjective only refers to 
-					// the current transition, not to the queue,
-					// compare the objective to the last item on the 
-					// flow queue
-					return _.last(this.flowq) !== objective;
-				},
-			},
-
-			// all wild-card state functions receive the token value as the first parameter.
-			'stopped:*': {
-				__enter: function(currState, aoptions) {
-					this.emit(currState, this.$el, this);
-				},
-
-				isNewObjective: function(currState, objective) {
-					return currState !== objective;
-				},
-			},
-
-			'not-initialized': {
-				isNewObjective: function(token, objective) {
-					return true;
-				}
+			} else if (!currentQueue) {
+				// currentQueue not set
+				return true;
 			}
-		}
+		},
 	});
 
 	
