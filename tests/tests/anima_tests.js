@@ -161,7 +161,7 @@ return function() {
 			opacity: 0,
 
 			__options: {
-				duration: 3000,
+				duration: 200,
 				__before: {
 					zIndex: 0
 				},

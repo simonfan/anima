@@ -50,8 +50,19 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 		/////////////////
 		////// API //////
 		/////////////////
+		// any kind of settings..
+		settings: function(name, settings, overwrite) {
+			return _.getset({
+				context: this,
+				obj: '_anima_settings',
+				name: name,
+				value: settings,
+				options: { overwrite: overwrite }
+			})
+		},
 
-		state: function(name, state, noOverwrite) {
+		// state definition
+		state: function(name, state, overwrite) {
 
 			/*
 				state: {
@@ -64,7 +75,8 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 				}
 			*/
 
-			var _this = this;
+			var _this = this,
+				settings = this.anima('settings');
 
 
 			/////////////////////////////
@@ -72,11 +84,11 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 			/////////////////////////////
 			return _.getset({
 				context: this,
-				obj: '_astates',
+				obj: [ settings.astates , settings.commonAstates ],
 				name: name,
 				value: state,
 				options: {
-					noOverwrite: noOverwrite,
+					overwrite: overwrite,
 
 					iterate: function(name, state) {
 						/*
@@ -137,9 +149,11 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 		},
 
 		options: function(name, options) {
+			var settings = this.anima('settings');
+
 			return _.getset({
 				context: this,
-				obj: '_aoptions',
+				obj: [ settings.aoptions, settings.commonAoptions ],
 				name: name,
 				value: options
 			})
@@ -176,6 +190,16 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 
 			// save a reference to this object on the $el
 			this.$el.data('anima', this);
+
+
+			// build up the settings
+			this.anima('settings', {
+				astates: {},
+				commonAstates: options.commonAstates || {},
+
+				aoptions: {},
+				commonAoptions: options.commonAoptions || {},
+			});
 
 			// save the states provided by options
 			this.anima('state', options.states);
