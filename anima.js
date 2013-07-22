@@ -76,30 +76,6 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 				name: name,
 				value: state,
 				options: {
-					// this refers to the anima object.
-					evaluate: function(state) {
-						var res;
-
-						if (typeof state === 'object') {
-							// if the state is an object
-							// for each property of the state, evaluate its value.
-							// and copy the result to a new res object
-							res = {};
-
-							for (prop in state) {
-								if (typeof state[ prop ] === 'function') {
-									res[ prop ] = state[ prop ].call(this.$el, this);
-								} else {
-									res[ prop ] = state[ prop ];
-								}
-							}
-						} else {
-							// if type of state is not an object, just pass it on.
-							res = state;
-						}
-
-						return res;
-					},
 					iterate: function(name, state) {
 						/*
 							When a state is defined, the task that will execute the 
@@ -129,6 +105,30 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 
 						// return savestate instead of state object.
 						return savestate;
+					},
+					// this refers to the anima object.
+					evaluate: function(state) {
+						var res;
+
+						if (typeof state === 'object') {
+							// if the state is an object
+							// for each property of the state, evaluate its value.
+							// and copy the result to a new res object
+							res = {};
+
+							for (prop in state) {
+								if (typeof state[ prop ] === 'function') {
+									res[ prop ] = state[ prop ].call(this.$el, this);
+								} else {
+									res[ prop ] = state[ prop ];
+								}
+							}
+						} else {
+							// if type of state is not an object, just pass it on.
+							res = state;
+						}
+
+						return res;
 					},
 				}
 			})
