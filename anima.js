@@ -57,7 +57,24 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 				obj: '_anima_settings',
 				name: name,
 				value: settings,
-				options: { overwrite: overwrite }
+				options: {
+					overwrite: overwrite,
+					iterate: function(name, settings) {
+						if (name === 'commonAstates') {
+							var _this = this;
+
+							// if the setting is commonAstates,
+							// define tasks for each of the states
+							_.each(settings, function(state, statename) {
+								_this.taskrunner('task', statename, function() {
+									return _this.anima('_toState', statename);
+								})
+							});
+						}
+
+						return settings;
+					}
+				}
 			})
 		},
 
