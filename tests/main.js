@@ -22,7 +22,7 @@ require.config({
 		'tests-main': 'tests',	// the main file for tests
 
 		// other tests go here
-		'example-tests': 'tests/example-tests',
+		'anima-tests': 'tests/anima_tests',
 	},
 	shim: {}
 });
