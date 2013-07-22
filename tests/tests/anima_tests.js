@@ -71,6 +71,13 @@ return function() {
 
 
 		// flow to fadeIn
+		ael.flow('fadeIn').then(function() {
+			// check!
+			equal(ael.$el.css('opacity'), 1, 'fadeIn opacity right');
+			equal(ael.$el.css('zIndex'), 1, 'fadeIn zIndex right');
+
+			start();
+		});
 
 
 

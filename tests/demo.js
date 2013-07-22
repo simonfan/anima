@@ -61,5 +61,7 @@ define(['anima', 'jquery'], function(Anima, $) {
 
 
 
-	$('#first').anima('flow',['fadeIn','halt','fadeOut','fadeHalf'])
+	$('#first').anima('flow',['fadeIn','halt','fadeOut','fadeHalf']).then(function() {
+		$('#first').anima('flow', 'fadeIn');
+	})
 });

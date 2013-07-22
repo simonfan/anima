@@ -148,7 +148,7 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 			sequence = typeof sequence === 'string' ? [sequence] : sequence;
 
 			// taskrunner run method receives: tasknames, insist, common object to be passed to each task.
-			this.taskrunner('run', sequence, insist, {});
+			return this.taskrunner('run', sequence, insist, {});
 		}
 	};
 
