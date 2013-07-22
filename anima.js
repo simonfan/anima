@@ -51,7 +51,7 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 		////// API //////
 		/////////////////
 
-		state: function(name, state) {
+		state: function(name, state, noOverwrite) {
 
 			/*
 				state: {
@@ -76,6 +76,8 @@ define(['jquery','taskrunner','underscore','_.mixins'], function($, TaskRunner, 
 				name: name,
 				value: state,
 				options: {
+					noOverwrite: noOverwrite,
+
 					iterate: function(name, state) {
 						/*
 							When a state is defined, the task that will execute the 
