@@ -5,7 +5,9 @@ return function() {
 	module('usage')
 	
 	asyncTest('direct usage', function() {
-		var $element = $('<div id="element"></div>').appendTo($('#qunit-fixture'));
+		var $element = $('<div id="element"></div>')
+							.appendTo($('#qunit-fixture'))
+							.css({ position: 'absolute' });
 
 		// initialize the anima
 		var ael = Anima.build({
@@ -13,10 +15,9 @@ return function() {
 			states: {
 				fadeIn: {
 					opacity: 1,
-					zIndex: 1,
 					
 					__options: {
-						duration: 3000,
+						duration: 400,
 						__before: {
 							display: 'block',
 							zIndex: 1,
@@ -26,10 +27,9 @@ return function() {
 
 				fadeHalf: {
 					opacity: 0.5,
-					zIndex: 1,
 
 					__options: {
-						duration: 1000,
+						duration: 500,
 
 						__before: {
 							display: 'block',
@@ -39,14 +39,15 @@ return function() {
 				},
 
 				halt: function() {
-					var defer = $.Deferred();
+					var _this = this,
+						defer = $.Deferred();
 
-					$('#first').html('halted');
+					this.$el.html('halted');
 
 					setTimeout(function() {
-						$('#first').html('halt end!');
+						_this.$el.html('halt end!');
 						defer.resolve();
-					}, 5000)
+					}, 200)
 
 					return defer;
 				}
@@ -59,7 +60,7 @@ return function() {
 			zIndex: 0,
 
 			__options: {
-				duration: 3000,
+				duration: 200,
 				__after: function($el) {
 					$el.css('display', 'none');
 				}
@@ -71,22 +72,140 @@ return function() {
 
 
 		// flow to fadeIn
-		ael.flow('fadeIn').then(function() {
-			// check!
-			equal(ael.$el.css('opacity'), 1, 'fadeIn opacity right');
-			equal(ael.$el.css('zIndex'), 1, 'fadeIn zIndex right');
+		ael.flow('fadeIn')
+			.then(function() {
+				// check!
+				equal(ael.$el.css('opacity'), 1, 'fadeIn opacity right');
+				equal(ael.$el.css('zIndex'), 1, 'fadeIn zIndex right');
+				// animate ael
+				return ael.flow('halt');
+			})
+			.then(function() {
+				// check!
+				equal(ael.$el.html(), 'halt end!');
 
-			start();
+				// animate ael
+				return ael.flow('fadeOut')
+			})
+			.then(function() {
+				// check!
+				equal(ael.$el.css('zIndex'), 0, 'fadeOut zIndex correct');
+
+				// animate ael
+				return ael.flow(['fadeIn','fadeHalf']);
+			})
+			.then(function() {
+				// check!
+				equal(ael.$el.css('opacity'), '0.5', 'fadeHalf opacity right');
+				equal(ael.$el.css('zIndex'), 1, 'fadeHalf zIndex right');
+
+				// continue normal unit tests flow.
+				start();
+			});
+	});
+
+
+	/*
+		jquery plugin usage test
+	*/
+	asyncTest('jQuery plugin usage', function() {
+		var $element = $('<div id="element"></div>')
+							.appendTo($('#qunit-fixture'))
+							.css({ position: 'absolute' });
+
+		$element.anima({
+			states: {
+				fadeIn: {
+					opacity: 1,
+					
+					__options: {
+						duration: 400,
+						__before: {
+							display: 'block',
+							zIndex: 1,
+						}
+					}
+				},
+
+				fadeHalf: {
+					opacity: 0.5,
+
+					__options: {
+						duration: 500,
+
+						__before: {
+							display: 'block',
+							zIndex: 1,
+						}
+					}
+				},
+
+				halt: function() {
+					var _this = this,
+						defer = $.Deferred();
+
+					this.$el.html('halted');
+
+					setTimeout(function() {
+						_this.$el.html('halt end!');
+						defer.resolve();
+					}, 200)
+
+					return defer;
+				}
+			}
+		});
+
+
+		$element.anima('state', 'fadeOut', {
+			opacity: 0,
+
+			__options: {
+				duration: 3000,
+				__before: {
+					zIndex: 0
+				},
+				__after: function($el) {
+					$el.css('display', 'none');
+				}
+			}
 		});
 
 
 
 
-	});
 
+		// flow to fadeIn
+		$element.anima('flow','fadeIn')
+			.then(function() {
+				// check!
+				equal($element.css('opacity'), 1, 'fadeIn opacity right');
+				equal($element.css('zIndex'), 1, 'fadeIn zIndex right');
+				// animate $element.anima
+				return $element.anima('flow','halt');
+			})
+			.then(function() {
+				// check!
+				equal($element.html(), 'halt end!');
 
-	asyncTest('jQuery plugin usage', function() {
-		start();
+				// animate $element.anima
+				return $element.anima('flow','fadeOut')
+			})
+			.then(function() {
+				// check!
+				equal($element.css('zIndex'), 0, 'fadeOut zIndex correct');
+
+				// animate $element.anima
+				return $element.anima('flow', ['fadeIn','fadeHalf']);
+			})
+			.then(function() {
+				// check!
+				equal($element.css('opacity'), '0.5', 'fadeHalf opacity right');
+				equal($element.css('zIndex'), 1, 'fadeHalf zIndex right');
+
+				// continue normal unit tests flow.
+				start();
+			});
 	})
 }
 });

@@ -5,7 +5,6 @@ define(['anima', 'jquery'], function(Anima, $) {
 		states: {
 			fadeIn: {
 				opacity: 1,
-				zIndex: 1,
 				
 				__options: {
 					duration: 3000,
@@ -18,7 +17,6 @@ define(['anima', 'jquery'], function(Anima, $) {
 
 			fadeHalf: {
 				opacity: 0.5,
-				zIndex: 1,
 
 				__options: {
 					duration: 1000,
@@ -62,6 +60,6 @@ define(['anima', 'jquery'], function(Anima, $) {
 
 
 	$('#first').anima('flow',['fadeIn','halt','fadeOut','fadeHalf']).then(function() {
-		$('#first').anima('flow', 'fadeIn');
+		$('#first').anima('flow','fadeIn');
 	})
 });
