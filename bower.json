@@ -2,10 +2,13 @@
   "name": "anima",
   "version": "0.0.1",
   "dependencies": {
-    "jquery": "lastest",
-    "underscore": "lastest",
     "taskrunner": "simonfan/taskrunner",
-    "_.mixins": "simonfan/_.mixins"
+    "_.mixins": "simonfan/_.mixins",
+    "jquery": "~2.0.3",
+    "underscore": "~1.5.1"
+  },
+  "devDependencies": {
+  	"qunit": "latest"
   },
   "main": "anima.js"
 }
